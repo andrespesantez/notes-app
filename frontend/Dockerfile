@@ -1,4 +1,4 @@
-# Etapa de dependencias
+# Etapa 1: Instalación de dependencias
 FROM node:18-alpine AS deps
 
 # Directorio de trabajo
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json yarn.lock* ./
 RUN yarn install --frozen-lockfile
 
-# Etapa de construcción
+# Etapa 2: Construcción
 FROM node:18-alpine AS builder
 
 # Directorio de trabajo
@@ -21,21 +21,33 @@ COPY . .
 # Compila el código
 RUN yarn build
 
-# Etapa de producción
+# Etapa 3: Producción
 FROM node:18-alpine AS runner
 # Directorio de trabajo
 WORKDIR /app
 # Definir variables de entorno
 ENV NODE_ENV=production
 
-# Copiar archivos necesarios
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+# Crear usuario y grupo no-root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
+# Copiar la salida standalone
+COPY --from=builder /app/.next/standalone ./
+# Copiar los assets públicos
+COPY --from=builder /app/public ./public
+# Copiar los assets estáticos
+COPY --from=builder /app/.next/static ./.next/static
+
+# Cambiar el propietario de los archivos
+RUN chown -R nextjs:nodejs .
+
+# Usar el usuario no-root
+USER nextjs
 # Exponer el puerto
 EXPOSE 3000
 
-# Comando de inicio
-CMD ["yarn", "start"]
+ENV PORT=3000
+
+# El server.js se encuentra en la raíz del standalone output
+CMD ["node", "server.js"]

@@ -2,10 +2,15 @@
 FROM maven:3.8-eclipse-temurin-21 AS build
 
 # Establecer el directorio de trabajo
-WORKDIR /app 
+WORKDIR /app
 
-# Copia los archivos necesarios
+# Copiar solo el pom.xml para cachear las dependencias
 COPY pom.xml .
+
+# Descargar las dependencias
+RUN mvn dependency:go-offline
+
+# Copiar el resto del código fuente
 COPY src ./src
 
 # Descargar dependencias y compilar
@@ -23,15 +28,14 @@ RUN apk add --no-cache curl
 # Copiar el JAR compilado
 COPY --from=build /app/target/notes-api-*.jar app.jar
 
-# Crear usuario no-root
-RUN addgroup -g 1001 -S spring && \
-    adduser -S spring -u 1001
+# Crear un grupo y usuario no-root para ejecutar
+RUN addgroup -S spring && adduser -S spring -G spring
 
 # Cambiar al usuario no-root
 USER spring:spring
 
-# Exponer el puerto
+# Exponer el puerto en el que corre
 EXPOSE 8080
 
-# Comando de arranque
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+# Comando para ejecutar
+ENTRYPOINT ["java","-jar","/app/app.jar"]
