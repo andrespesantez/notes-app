@@ -118,7 +118,7 @@ const SearchFilters = () => {
                   className="select"
                 >
                   <option value="">Todas las categorías</option>
-                  {categories.map(category => (
+                  {categories.map((category: string) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>

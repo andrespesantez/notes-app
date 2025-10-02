@@ -1,7 +1,6 @@
 // src/components/notes/ViewModeToggle.tsx
 'use client'
 
-import { useState } from 'react'
 import { Grid3X3, List, LayoutGrid } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useLocalStorage } from '@/hooks/useLocalStorage'

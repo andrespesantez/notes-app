@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Plus, RefreshCw, Search, Filter, Moon, Sun } from 'lucide-react'
+import { Plus, RefreshCw, Search } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { useNotes } from '@/store/notes-store'

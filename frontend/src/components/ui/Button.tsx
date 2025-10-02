@@ -44,7 +44,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       lg: 'btn-lg',
     }
 
-    const MotionWrapper = animate ? motion.button : 'button'
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const MotionWrapper: any = animate ? motion.button : 'button'
 
     return (
       <MotionWrapper

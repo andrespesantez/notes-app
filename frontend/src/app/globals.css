@@ -4,19 +4,15 @@
 
 @layer base {
   html {
-    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   body {
-    font-feature-settings: 'rlig' 1, 'calt' 1;
-  }
-
-  * {
-    @apply border-border;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-surface-50 text-surface-900;
   }
 
   /* Scrollbar personalizado */

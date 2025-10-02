@@ -1,4 +1,4 @@
-/ src/main/java/com/notes/repository/NoteRepository.java
+// src/main/java/com/notes/repository/NoteRepository.java
 package com.notes.repository;
 
 import com.notes.model.Note;

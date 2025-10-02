@@ -1,31 +1,48 @@
-import { useEffect } from 'react';
+import { useEffect, DependencyList } from "react"
 
-export const useKeyboard = (key: string, callback: () => void) => {
-    useEffect(() => {
-        const handleKeyPress = (event: KeyboardEvent) => {
-            if (event.key === key) {
-                callback();
-            }
-        };
+export function useKeyboard(key: string, callback: () => void, deps: DependencyList = []) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === key) {
+        event.preventDefault()
+        callback()
+      }
+    }
 
-        window.addEventListener('keydown', handleKeyPress);
-        return () => {
-            window.removeEventListener('keydown', handleKeyPress);
-        };
-    }, [key, callback]);
-};
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, callback, ...deps])
+}
 
-export const useKeyboardShortcut = (keys: string[], callback: () => void) => {
-    useEffect(() => {
-        const handleKeyPress = (event: KeyboardEvent) => {
-            if (keys.every(key => event.key === key)) {
-                callback();
-            }
-        };
+export function useKeyboardShortcut(
+  keys: string[],
+  callback: () => void,
+  deps: DependencyList = []
+) {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const pressedKeys: string[] = []
+      
+      if (event.ctrlKey) pressedKeys.push("ctrl")
+      if (event.altKey) pressedKeys.push("alt")
+      if (event.shiftKey) pressedKeys.push("shift")
+      if (event.metaKey) pressedKeys.push("meta")
+      
+      pressedKeys.push(event.key.toLowerCase())
+      
+      const keysMatch = keys.every(key => 
+        pressedKeys.includes(key.toLowerCase())
+      ) && keys.length === pressedKeys.length
 
-        window.addEventListener('keydown', handleKeyPress);
-        return () => {
-            window.removeEventListener('keydown', handleKeyPress);
-        };
-    }, [keys, callback]);
-};
+      if (keysMatch) {
+        event.preventDefault()
+        callback()
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keys, callback, ...deps])
+}

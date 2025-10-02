@@ -1,167 +1,136 @@
-// src/main/java/com/notes/service/NoteService.java
 package com.notes.service;
 
+import com.notes.dto.CreateNoteDto;
+import com.notes.dto.NoteDto;
+import com.notes.dto.UpdateNoteDto;
+import com.notes.exception.ResourceNotFoundException;
+import com.notes.mapper.NoteMapper;
 import com.notes.model.Note;
 import com.notes.repository.NoteRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class NoteService {
-    
-    @Autowired
-    private NoteRepository noteRepository;
-    
-    // Obtener todas las notas ordenadas por fecha de actualización
-    public List<Note> getAllNotes() {
+
+    private final NoteRepository noteRepository;
+    private final NoteMapper noteMapper;
+
+    public NoteService(NoteRepository noteRepository, NoteMapper noteMapper) {
+        this.noteRepository = noteRepository;
+        this.noteMapper = noteMapper;
+    }
+
+    public List<NoteDto> getAllNotes() {
         Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
-        return noteRepository.findAll(sort);
+        return noteRepository.findAll(sort).stream()
+                .map(noteMapper::toDto)
+                .collect(Collectors.toList());
     }
-    
-    // Obtener nota por ID
-    public Optional<Note> getNoteById(Long id) {
-        if (id == null || id <= 0) {
-            return Optional.empty();
-        }
-        return noteRepository.findByIdSafe(id);
+
+    public NoteDto getNoteById(Long id) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Note not found with id: " + id));
+        return noteMapper.toDto(note);
     }
-    
-    // Crear nueva nota
-    public Note createNote(Note note) {
-        if (note == null) {
-            throw new IllegalArgumentException("La nota no puede ser null");
+
+    public NoteDto createNote(CreateNoteDto createNoteDto) {
+        if (createNoteDto == null) {
+            throw new IllegalArgumentException("Note cannot be null");
         }
-        
-        // Validaciones adicionales
-        if (note.getTitle() == null || note.getTitle().trim().isEmpty()) {
-            throw new IllegalArgumentException("El título es obligatorio");
-        }
-        
-        // Limpiar datos
-        note.setTitle(note.getTitle().trim());
-        if (note.getContent() != null) {
-            note.setContent(note.getContent().trim());
-        }
-        
-        return noteRepository.save(note);
+        Note note = noteMapper.toEntity(createNoteDto);
+        return noteMapper.toDto(noteRepository.save(note));
     }
-    
-    // Actualizar nota existente
-    public Optional<Note> updateNote(Long id, Note noteDetails) {
-        if (id == null || id <= 0) {
-            return Optional.empty();
-        }
-        
-        return noteRepository.findByIdSafe(id).map(existingNote -> {
-            // Actualizar campos
-            if (noteDetails.getTitle() != null && !noteDetails.getTitle().trim().isEmpty()) {
-                existingNote.setTitle(noteDetails.getTitle().trim());
-            }
-            
-            if (noteDetails.getContent() != null) {
-                existingNote.setContent(noteDetails.getContent().trim());
-            }
-            
-            if (noteDetails.getCategory() != null) {
-                existingNote.setCategory(noteDetails.getCategory().trim());
-            }
-            
-            if (noteDetails.getPriority() != null) {
-                existingNote.setPriority(noteDetails.getPriority());
-            }
-            
-            return noteRepository.save(existingNote);
-        });
+
+    public NoteDto updateNote(Long id, UpdateNoteDto updateNoteDto) {
+        Note existingNote = noteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Note not found with id: " + id));
+
+        noteMapper.updateEntityFromDto(updateNoteDto, existingNote);
+        return noteMapper.toDto(noteRepository.save(existingNote));
     }
-    
-    // Eliminar nota
-    public boolean deleteNote(Long id) {
-        if (id == null || id <= 0) {
-            return false;
-        }
-        
-        return noteRepository.findByIdSafe(id).map(note -> {
-            noteRepository.delete(note);
-            return true;
-        }).orElse(false);
+
+    public void deleteNote(Long id) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Note not found with id: " + id));
+        noteRepository.delete(note);
     }
-    
-    // Buscar notas
-    public List<Note> searchNotes(String keyword) {
+
+    public List<NoteDto> searchNotes(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             return getAllNotes();
         }
-        return noteRepository.findByKeyword(keyword.trim());
+        return noteRepository.findByKeyword(keyword.trim()).stream()
+                .map(noteMapper::toDto)
+                .collect(Collectors.toList());
     }
-    
-    // Filtrar notas
-    public List<Note> filterNotes(String keyword, String category, Note.Priority priority) {
-        // Normalizar parámetros
+
+    public List<NoteDto> filterNotes(String keyword, String category, Note.Priority priority) {
         String normalizedKeyword = (keyword != null && !keyword.trim().isEmpty()) ? keyword.trim() : null;
         String normalizedCategory = (category != null && !category.trim().isEmpty()) ? category.trim() : null;
-        
-        return noteRepository.findByFilters(normalizedKeyword, normalizedCategory, priority);
+
+        return noteRepository.findByFilters(normalizedKeyword, normalizedCategory, priority).stream()
+                .map(noteMapper::toDto)
+                .collect(Collectors.toList());
     }
-    
-    // Obtener notas por categoría
-    public List<Note> getNotesByCategory(String category) {
+
+    public List<NoteDto> getNotesByCategory(String category) {
         if (category == null || category.trim().isEmpty()) {
             return getAllNotes();
         }
         Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
-        return noteRepository.findByCategory(category.trim(), sort);
+        return noteRepository.findByCategory(category.trim(), sort).stream()
+                .map(noteMapper::toDto)
+                .collect(Collectors.toList());
     }
-    
-    // Obtener notas por prioridad
-    public List<Note> getNotesByPriority(Note.Priority priority) {
+
+    public List<NoteDto> getNotesByPriority(Note.Priority priority) {
         if (priority == null) {
             return getAllNotes();
         }
         Sort sort = Sort.by(Sort.Direction.DESC, "updatedAt");
-        return noteRepository.findByPriority(priority, sort);
+        return noteRepository.findByPriority(priority, sort).stream()
+                .map(noteMapper::toDto)
+                .collect(Collectors.toList());
     }
-    
-    // Obtener todas las categorías
+
     public List<String> getAllCategories() {
         return noteRepository.findDistinctCategories();
     }
-    
-    // Obtener notas recientes
-    public List<Note> getRecentNotes() {
-        return noteRepository.findTop10ByOrderByUpdatedAtDesc();
+
+    public List<NoteDto> getRecentNotes() {
+        return noteRepository.findTop10ByOrderByUpdatedAtDesc().stream()
+                .map(noteMapper::toDto)
+                .collect(Collectors.toList());
     }
-    
-    // Obtener estadísticas
+
     public NoteStats getStats() {
         long total = noteRepository.count();
         long high = noteRepository.countByPriority(Note.Priority.HIGH);
         long medium = noteRepository.countByPriority(Note.Priority.MEDIUM);
         long low = noteRepository.countByPriority(Note.Priority.LOW);
-        
+
         return new NoteStats(total, high, medium, low);
     }
-    
-    // Clase para estadísticas
+
     public static class NoteStats {
         private final long total;
         private final long high;
         private final long medium;
         private final long low;
-        
+
         public NoteStats(long total, long high, long medium, long low) {
             this.total = total;
             this.high = high;
             this.medium = medium;
             this.low = low;
         }
-        
+
         public long getTotal() { return total; }
         public long getHigh() { return high; }
         public long getMedium() { return medium; }

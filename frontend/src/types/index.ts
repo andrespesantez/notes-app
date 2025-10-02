@@ -1,16 +1,15 @@
-// src/types/index.ts
 export interface Note {
   id: number;
   title: string;
   content: string;
   category: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  priority: "LOW" | "MEDIUM" | "HIGH";
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ApiResponse<T> {
-  status: 'success' | 'error';
+  status: "success" | "error";
   message: string;
   data: T;
 }
@@ -26,22 +25,22 @@ export interface NoteFormData {
   title: string;
   content: string;
   category: string;
-  priority: Note['priority'];
+  priority: Note["priority"];
 }
 
 export interface FilterOptions {
   keyword?: string;
   category?: string;
-  priority?: Note['priority'];
+  priority?: Note["priority"];
 }
 
 export interface ViewMode {
-  type: 'grid' | 'list' | 'compact';
+  type: "grid" | "list" | "compact";
   columns: number;
 }
 
 export interface Theme {
-  mode: 'light' | 'dark' | 'system';
+  mode: "light" | "dark" | "system";
   primary: string;
   accent: string;
 }

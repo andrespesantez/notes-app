@@ -1,14 +1,15 @@
-// src/lib/api.ts
-import axios from 'axios';
-import { Note, ApiResponse, NoteStats, FilterOptions } from '@/types';
+import axios from "axios";
+import { Note, ApiResponse, NoteStats, FilterOptions } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost/api';
+const API_BASE_URL = typeof window === 'undefined'
+  ? 'http://nginx-proxy/api' // URL para SSR dentro de Docker
+  : '/api'; // URL relativa para el cliente (navegador)
 
 // Crear instancia de axios con configuración base
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
   timeout: 15000,
 });
@@ -16,34 +17,34 @@ const api = axios.create({
 // Interceptors para logging y manejo de errores
 api.interceptors.request.use(
   (config) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`🌐 ${config.method?.toUpperCase()} ${config.url}`, config.data);
     }
     return config;
   },
   (error) => {
-    console.error('Request error:', error);
+    console.error("Request error:", error);
     return Promise.reject(error);
   }
 );
 
 api.interceptors.response.use(
   (response) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === "development") {
       console.log(`✅ ${response.config.method?.toUpperCase()} ${response.config.url}`, response.data);
     }
     return response;
   },
   (error) => {
-    console.error('Response error:', error);
+    console.error("Response error:", error);
     
     // Manejo específico de errores de red
-    if (error.code === 'ECONNABORTED') {
-      throw new Error('La solicitud tardó demasiado tiempo. Verifica tu conexión.');
+    if (error.code === "ECONNABORTED") {
+      throw new Error("La solicitud tardó demasiado tiempo. Verifica tu conexión.");
     }
     
     if (!error.response) {
-      throw new Error('Error de conexión. Verifica que el servidor esté disponible.');
+      throw new Error("Error de conexión. Verifica que el servidor esté disponible.");
     }
     
     const status = error.response.status;
@@ -53,15 +54,15 @@ api.interceptors.response.use(
       case 400:
         throw new Error(`Solicitud inválida: ${message}`);
       case 401:
-        throw new Error('No autorizado');
+        throw new Error("No autorizado");
       case 403:
-        throw new Error('Acceso denegado');
+        throw new Error("Acceso denegado");
       case 404:
-        throw new Error('Recurso no encontrado');
+        throw new Error("Recurso no encontrado");
       case 500:
-        throw new Error('Error interno del servidor');
+        throw new Error("Error interno del servidor");
       default:
-        throw new Error(message || 'Error desconocido');
+        throw new Error(message || "Error desconocido");
     }
   }
 );
@@ -71,10 +72,10 @@ export const notesApi = {
   // Obtener todas las notas
   getAllNotes: async (): Promise<Note[]> => {
     try {
-      const response = await api.get<ApiResponse<Note[]>>('/notes');
+      const response = await api.get<ApiResponse<Note[]>>("/notes");
       return response.data.data || [];
     } catch (error) {
-      console.error('Error fetching notes:', error);
+      console.error("Error fetching notes:", error);
       throw error;
     }
   },
@@ -82,16 +83,16 @@ export const notesApi = {
   // Obtener nota por ID
   getNoteById: async (id: number): Promise<Note> => {
     const response = await api.get<ApiResponse<Note>>(`/notes/${id}`);
-    if (response.data.status === 'error') {
+    if (response.data.status === "error") {
       throw new Error(response.data.message);
     }
     return response.data.data;
   },
 
   // Crear nueva nota
-  createNote: async (note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Promise<Note> => {
-    const response = await api.post<ApiResponse<Note>>('/notes', note);
-    if (response.data.status === 'error') {
+  createNote: async (note: Omit<Note, "id" | "createdAt" | "updatedAt">): Promise<Note> => {
+    const response = await api.post<ApiResponse<Note>>("/notes", note);
+    if (response.data.status === "error") {
       throw new Error(response.data.message);
     }
     return response.data.data;
@@ -100,7 +101,7 @@ export const notesApi = {
   // Actualizar nota
   updateNote: async (id: number, note: Partial<Note>): Promise<Note> => {
     const response = await api.put<ApiResponse<Note>>(`/notes/${id}`, note);
-    if (response.data.status === 'error') {
+    if (response.data.status === "error") {
       throw new Error(response.data.message);
     }
     return response.data.data;
@@ -109,7 +110,7 @@ export const notesApi = {
   // Eliminar nota
   deleteNote: async (id: number): Promise<void> => {
     const response = await api.delete<ApiResponse<void>>(`/notes/${id}`);
-    if (response.data.status === 'error') {
+    if (response.data.status === "error") {
       throw new Error(response.data.message);
     }
   },
@@ -125,42 +126,31 @@ export const notesApi = {
   // Filtrar notas con múltiples criterios
   filterNotes: async (filters: FilterOptions): Promise<Note[]> => {
     const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([_, value]) => value !== undefined && value !== null && value !== '')
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      Object.entries(filters).filter(([_, value]) => value !== undefined && value !== null && value !== "")
     );
     
-    const response = await api.get<ApiResponse<Note[]>>('/notes/filter', {
+    const response = await api.get<ApiResponse<Note[]>>("/notes/filter", {
       params: cleanFilters
     });
-    return response.data.data || [];
-  },
-
-  // Obtener notas por categoría
-  getNotesByCategory: async (category: string): Promise<Note[]> => {
-    const response = await api.get<ApiResponse<Note[]>>(`/notes/category/${encodeURIComponent(category)}`);
-    return response.data.data || [];
-  },
-
-  // Obtener notas por prioridad
-  getNotesByPriority: async (priority: Note['priority']): Promise<Note[]> => {
-    const response = await api.get<ApiResponse<Note[]>>(`/notes/priority/${priority}`);
     return response.data.data || [];
   },
 
   // Obtener todas las categorías
   getCategories: async (): Promise<string[]> => {
     try {
-      const response = await api.get<ApiResponse<string[]>>('/notes/categories');
+      const response = await api.get<ApiResponse<string[]>>("/notes/categories");
       return response.data.data || [];
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
       return [];
     }
   },
 
   // Obtener estadísticas
   getStats: async (): Promise<NoteStats> => {
-    const response = await api.get<ApiResponse<NoteStats>>('/notes/stats');
-    if (response.data.status === 'error') {
+    const response = await api.get<ApiResponse<NoteStats>>("/notes/stats");
+    if (response.data.status === "error") {
       throw new Error(response.data.message);
     }
     return response.data.data || { total: 0, high: 0, medium: 0, low: 0 };
@@ -168,7 +158,7 @@ export const notesApi = {
 
   // Obtener notas recientes
   getRecentNotes: async (limit: number = 10): Promise<Note[]> => {
-    const response = await api.get<ApiResponse<Note[]>>('/notes/recent', {
+    const response = await api.get<ApiResponse<Note[]>>("/notes/recent", {
       params: { limit }
     });
     return response.data.data || [];
@@ -177,7 +167,7 @@ export const notesApi = {
   // Health check
   healthCheck: async (): Promise<boolean> => {
     try {
-      const response = await api.get('/notes/health');
+      const response = await api.get("/notes/health");
       return response.status === 200;
     } catch (error) {
       return false;

@@ -6,7 +6,7 @@ import { Edit3, Trash2, Clock, Folder } from 'lucide-react'
 import { Note } from '@/types'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
-import { getPriorityColor, formatDate, truncateText, getCategoryIcon } from '@/lib/utils'
+import { getPriorityColor, formatDate, truncateText } from '@/lib/utils'
 
 interface NoteCardProps {
   note: Note

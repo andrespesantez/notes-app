@@ -1,18 +1,18 @@
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   output: "standalone",
   
   // Configuración experimental para Next.js 15
   experimental: {
     optimizePackageImports: ["lucide-react", "@headlessui/react"],
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
+  },
+
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },

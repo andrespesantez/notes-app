@@ -3,7 +3,8 @@ version: '3.8'
 services:
   # Base de datos MySQL
   mysql-db:
-    image: mysql:8.0
+    build:
+      context: ./mysql
     container_name: notes-mysql
     restart: always
     environment:
@@ -14,8 +15,8 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./mysql/mysql_data:/var/lib/mysql
+      - ./mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - notes-network
     healthcheck:
@@ -56,9 +57,10 @@ services:
     container_name: notes-frontend
     restart: always
     ports:
-      - "3000:80"
+      - "3000:3000"
     depends_on:
-      - backend-api
+      backend-api:
+        condition: service_healthy
     networks:
       - notes-network
 
@@ -83,6 +85,3 @@ services:
 networks:
   notes-network:
     driver: bridge
-
-volumes:
-  mysql_data:

@@ -3,7 +3,7 @@
 
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { FileText, Plus, Filter, Grid3X3, List, BarChart3 } from 'lucide-react'
+import { FileText, Plus } from 'lucide-react'
 import { Header } from '@/components/layout/Header'
 import { NoteCard } from '@/components/notes/NoteCard'
 import { NoteForm } from '@/components/notes/NoteForm'
@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SkeletonCard } from '@/components/ui/Skeleton'
 import { useNotes } from '@/store/notes-store'
 import { useKeyboardShortcut } from '@/hooks/useKeyboard'
+import { Note, NoteFormData } from '@/types'
 
 const container = {
   hidden: { opacity: 0 },
@@ -62,12 +63,12 @@ export default function HomePage() {
     setShowForm(true)
   }
 
-  const handleEditNote = (note: any) => {
+  const handleEditNote = (note: Note) => {
     setEditingNote(note)
     setShowForm(true)
   }
 
-  const handleFormSubmit = async (formData: any) => {
+  const handleFormSubmit = async (formData: NoteFormData) => {
     if (editingNote) {
       await updateNote(editingNote.id, formData)
     } else {
@@ -182,7 +183,7 @@ export default function HomePage() {
             animate="show"
             className="grid-responsive gap-6"
           >
-            {filteredNotes.map((note, index) => (
+            {filteredNotes.map((note: Note, index: number) => (
               <motion.div key={note.id} variants={item}>
                 <NoteCard
                   note={note}

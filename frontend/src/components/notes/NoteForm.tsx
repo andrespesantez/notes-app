@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Save, X } from 'lucide-react'
+import { Save } from 'lucide-react'
 import { Note, NoteFormData } from '@/types'
 import { Modal } from '@/components/ui/Modal'
 import { Input } from '@/components/ui/Input'

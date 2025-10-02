@@ -24,9 +24,11 @@ hs_err_pid*
 replay_pid*
 
 # dependencies
-/node_modules
+*/target
+*/node_modules
 /.pnp
 .pnp.js
+.next
 
 # testing
 /coverage
@@ -68,3 +70,7 @@ docker-compose.prod.yml
 # Logs
 logs
 *.log
+yarn.lock
+
+# Datos
+mysql/

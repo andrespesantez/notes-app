@@ -1,8 +1,7 @@
-// src/app/providers.tsx
-'use client'
+"use client"
 
-import { createContext, useContext, useEffect, useState } from 'react'
-import { NotesProvider } from '@/store/notes-store'
+import { createContext, useContext, useEffect, useState } from "react"
+import { NotesProvider } from "@/store/notes-store"
 
 interface AppContextType {
   mounted: boolean
