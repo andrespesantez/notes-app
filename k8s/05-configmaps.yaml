@@ -1,0 +1,20 @@
+# ============================================
+# ConfigMaps
+# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: notes-app
+data:
+  SPRING_JPA_HIBERNATE_DDL_AUTO: "update"
+  SPRING_JPA_SHOW_SQL: "false"
+  SERVER_PORT: "8080"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: notes-app
+data:
+  NEXT_PUBLIC_API_URL: "http://backend:8080"

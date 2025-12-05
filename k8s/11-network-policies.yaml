@@ -1,0 +1,116 @@
+# ============================================
+# Network Policies - Seguridad de Red
+# ============================================
+# Objetivo: Implementar políticas de seguridad (Objetivo 3)
+# Arquitectura: ALB Ingress → Frontend/Backend → RDS
+# Principio: Zero Trust - Denegar todo por defecto
+
+# Política por defecto: Denegar todo el tráfico ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: notes-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+---
+# Política por defecto: Denegar todo el tráfico egress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-egress
+  namespace: notes-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+---
+# Permitir que Frontend reciba tráfico del ALB (cualquier IP externa)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-ingress
+  namespace: notes-app
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    # Desde ALB (IPs externas)
+    - ports:
+        - protocol: TCP
+          port: 3000
+---
+# Permitir que Frontend se comunique con Backend y DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-egress
+  namespace: notes-app
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Egress
+  egress:
+    # Hacia Backend
+    - to:
+        - podSelector:
+            matchLabels:
+              app: backend
+      ports:
+        - protocol: TCP
+          port: 8080
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+---
+# Permitir que Backend reciba tráfico del ALB y Frontend
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-ingress
+  namespace: notes-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    # Desde ALB (para /api y /actuator)
+    - ports:
+        - protocol: TCP
+          port: 8080
+---
+# Permitir que Backend se comunique con RDS (MySQL)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-egress
+  namespace: notes-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Egress
+  egress:
+    # Hacia RDS MySQL (cualquier IP externa en puerto 3306)
+    - ports:
+        - protocol: TCP
+          port: 3306
+    # DNS
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53

@@ -1,0 +1,43 @@
+# ============================================
+# Monitoring & Logging Configuration
+# ============================================
+# Objetivo: Implementar supervisión (Objetivo 3)
+
+# ConfigMap para configuración de métricas
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-config
+  namespace: notes-app
+data:
+  # Configuración de métricas para Prometheus (si se instala)
+  prometheus.yml: |
+    scrape_configs:
+      - job_name: 'backend'
+        metrics_path: '/actuator/prometheus'
+        static_configs:
+          - targets: ['backend:8080']
+---
+# PodDisruptionBudget para Backend - Alta disponibilidad
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend-pdb
+  namespace: notes-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: backend
+---
+# PodDisruptionBudget para Frontend - Alta disponibilidad
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: notes-app
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: frontend

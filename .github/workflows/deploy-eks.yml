@@ -1,0 +1,118 @@
+# ============================================
+# CD - Deploy to AWS EKS
+# ============================================
+# Se dispara después de que docker-push.yml complete exitosamente
+# Despliega las imágenes de Docker Hub a EKS
+
+name: CD - Deploy to EKS
+
+on:
+  workflow_run:
+    workflows: ["Docker Image CI"]
+    types:
+      - completed
+    branches: [main]
+
+  # Permite ejecución manual
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-1
+  EKS_CLUSTER_NAME: notes-app-eks
+
+jobs:
+  deploy:
+    name: Deploy to EKS
+    runs-on: ubuntu-latest
+    # Solo ejecutar si el workflow anterior fue exitoso
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+
+      - name: Replace Docker Hub username in manifests
+        run: |
+          # Reemplazar placeholder con el username real
+          sed -i "s|DOCKERHUB_USERNAME|${{ secrets.DOCKERHUB_USERNAME }}|g" k8s/*.yaml
+
+      - name: Apply Kubernetes manifests
+        run: |
+          # Aplicar en orden correcto
+          echo "=== Aplicando Namespace ==="
+          kubectl apply -f k8s/01-namespace.yaml
+          
+          echo "=== Aplicando RBAC ==="
+          kubectl apply -f k8s/02-rbac.yaml
+          
+          echo "=== Aplicando Secrets ==="
+          kubectl apply -f k8s/03-secrets.yaml
+          
+          echo "=== Aplicando Storage ==="
+          kubectl apply -f k8s/04-storage.yaml
+          
+          echo "=== Aplicando ConfigMaps ==="
+          kubectl apply -f k8s/05-configmaps.yaml
+          
+          echo "=== Aplicando Deployments ==="
+          kubectl apply -f k8s/06-backend.yaml
+          kubectl apply -f k8s/07-frontend.yaml
+          
+          echo "=== Aplicando Ingress (ALB) ==="
+          kubectl apply -f k8s/09-ingress.yaml
+          
+          echo "=== Aplicando HPA ==="
+          kubectl apply -f k8s/10-hpa.yaml
+          
+          echo "=== Aplicando Network Policies ==="
+          kubectl apply -f k8s/11-network-policies.yaml
+          
+          echo "=== Aplicando Monitoring ==="
+          kubectl apply -f k8s/12-monitoring.yaml
+
+      - name: Force rollout to pull latest images
+        run: |
+          kubectl rollout restart deployment/backend -n notes-app
+          kubectl rollout restart deployment/frontend -n notes-app
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/backend -n notes-app --timeout=300s
+          kubectl rollout status deployment/frontend -n notes-app --timeout=300s
+
+      - name: Get deployment status
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -n notes-app
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -n notes-app
+          echo ""
+          echo "=== Ingress (ALB) ==="
+          kubectl get ingress -n notes-app
+          echo ""
+
+      - name: Deployment summary
+        run: |
+          ALB_URL=$(kubectl get ingress notes-app-ingress -n notes-app -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "pending")
+          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Cluster:** ${{ env.EKS_CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**ALB URL:** http://${ALB_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Images Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ secrets.DOCKERHUB_USERNAME }}/notes-app-backend:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`${{ secrets.DOCKERHUB_USERNAME }}/notes-app-frontend:latest\`" >> $GITHUB_STEP_SUMMARY

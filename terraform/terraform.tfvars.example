@@ -1,0 +1,10 @@
+# ============================================
+# Terraform Variables Example
+# ============================================
+# Copiar a terraform.tfvars y completar valores
+
+aws_region         = "us-east-1"
+environment        = "production"
+db_username        = "notes_user"
+db_password        = "CHANGE_ME_secure_password_123!"
+dockerhub_username = "YOUR_DOCKERHUB_USERNAME"

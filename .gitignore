@@ -74,3 +74,14 @@ yarn.lock
 
 # Datos
 mysql_data/
+
+# Terraform
+.terraform
+.terraform.lock.hcl
+*.tfstate
+.tfstate.backup
+crash.log
+*.tfvars
+*.tfvars.json
+tfplan
+*.tfstate.*

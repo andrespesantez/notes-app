@@ -1,0 +1,37 @@
+# ============================================
+# Kustomization - Multi-Environment Support
+# ============================================
+# Usar con: kubectl apply -k k8s/overlays/staging
+#
+# Estructura:
+#   k8s/
+#   ├── base/              # Manifiestos base (actuales)
+#   └── overlays/
+#       ├── production/
+#       ├── staging/
+#       └── qa/
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Namespace base
+namespace: notes-app
+
+# Recursos base a incluir
+resources:
+  - 01-namespace.yaml
+  - 02-rbac.yaml
+  - 03-secrets.yaml
+  - 04-storage.yaml
+  - 05-configmaps.yaml
+  - 06-backend.yaml
+  - 07-frontend.yaml
+  - 09-ingress.yaml
+  - 10-hpa.yaml
+  - 11-network-policies.yaml
+  - 12-monitoring.yaml
+
+# Labels comunes
+commonLabels:
+  app.kubernetes.io/part-of: notes-app
+  app.kubernetes.io/managed-by: kustomize

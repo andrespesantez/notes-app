@@ -1,0 +1,10 @@
+# ============================================
+# Namespace para Staging
+# ============================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: notes-app-staging
+  labels:
+    app.kubernetes.io/name: notes-app
+    environment: staging

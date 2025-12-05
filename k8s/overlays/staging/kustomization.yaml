@@ -1,0 +1,87 @@
+# ============================================
+# Staging Environment Overlay
+# ============================================
+# Deploy: kubectl apply -k k8s/overlays/staging
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: notes-app-staging
+
+# Heredar de base
+resources:
+  - ../../
+
+# Prefijo para todos los recursos
+namePrefix: staging-
+
+# Labels específicos del ambiente
+commonLabels:
+  environment: staging
+
+# Crear namespace de staging
+generatorOptions:
+  disableNameSuffixHash: true
+
+# Patches para ajustar recursos en staging
+patches:
+  # Reducir réplicas en staging
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: backend
+      spec:
+        replicas: 1
+    target:
+      kind: Deployment
+      name: backend
+  
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: frontend
+      spec:
+        replicas: 1
+    target:
+      kind: Deployment
+      name: frontend
+
+  # Ajustar HPA para staging
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: backend-hpa
+      spec:
+        minReplicas: 1
+        maxReplicas: 2
+    target:
+      kind: HorizontalPodAutoscaler
+      name: backend-hpa
+
+  - patch: |-
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata:
+        name: frontend-hpa
+      spec:
+        minReplicas: 1
+        maxReplicas: 2
+    target:
+      kind: HorizontalPodAutoscaler
+      name: frontend-hpa
+
+  # Ingress para staging
+  - patch: |-
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: notes-app-ingress
+        annotations:
+          alb.ingress.kubernetes.io/group.name: notes-app-staging
+          alb.ingress.kubernetes.io/tags: Environment=staging,Project=notes-app
+    target:
+      kind: Ingress
+      name: notes-app-ingress

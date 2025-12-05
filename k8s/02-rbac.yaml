@@ -1,0 +1,107 @@
+# ============================================
+# RBAC - Role-Based Access Control
+# ============================================
+# Objetivo: Implementar políticas de seguridad (Objetivo 3)
+
+# ServiceAccount para Backend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-sa
+  namespace: notes-app
+  labels:
+    app: backend
+---
+# ServiceAccount para Frontend
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: frontend-sa
+  namespace: notes-app
+  labels:
+    app: frontend
+---
+# Role con permisos mínimos para la aplicación
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: app-role
+  namespace: notes-app
+rules:
+  # Permisos para leer ConfigMaps y Secrets
+  - apiGroups: [""]
+    resources: ["configmaps", "secrets"]
+    verbs: ["get", "list", "watch"]
+  # Permisos para leer información de pods (health checks)
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+# RoleBinding para Backend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backend-rolebinding
+  namespace: notes-app
+subjects:
+  - kind: ServiceAccount
+    name: backend-sa
+    namespace: notes-app
+roleRef:
+  kind: Role
+  name: app-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# RoleBinding para Frontend
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: frontend-rolebinding
+  namespace: notes-app
+subjects:
+  - kind: ServiceAccount
+    name: frontend-sa
+    namespace: notes-app
+roleRef:
+  kind: Role
+  name: app-role
+  apiGroup: rbac.authorization.k8s.io
+---
+# ResourceQuota - Limitar recursos del namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: notes-app-quota
+  namespace: notes-app
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: "4Gi"
+    limits.cpu: "8"
+    limits.memory: "8Gi"
+    pods: "20"
+    services: "10"
+    secrets: "10"
+    configmaps: "10"
+---
+# LimitRange - Límites por defecto para pods
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: notes-app-limits
+  namespace: notes-app
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      max:
+        cpu: "2"
+        memory: "2Gi"
+      min:
+        cpu: "50m"
+        memory: "64Mi"

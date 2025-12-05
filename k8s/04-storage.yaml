@@ -1,0 +1,49 @@
+# ============================================
+# Storage - Almacenamiento
+# ============================================
+# Objetivo: Definición de almacenamiento (Tarea mínima)
+# Nota: RDS gestiona el almacenamiento de BD
+# Para logs/cache usamos emptyDir (no requiere EBS CSI Driver)
+# StorageClass definido para referencia futura si se necesita PVC
+
+# StorageClass para EBS (GP3) - Requiere EBS CSI Driver addon
+# Para habilitar: aws eks create-addon --cluster-name notes-app-eks --addon-name aws-ebs-csi-driver
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ebs-gp3
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  fsType: ext4
+  encrypted: "true"
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+
+# NOTA: Los PVCs se eliminaron porque:
+# 1. Requieren EBS CSI Driver (addon adicional)
+# 2. Para desarrollo, emptyDir es suficiente para logs/cache
+# 3. Los datos importantes están en RDS (gestionado)
+#
+# Si necesitas PVC en producción:
+# 1. Instalar EBS CSI Driver addon en EKS
+# 2. Crear IRSA para el addon
+# 3. Descomentar los PVCs abajo
+
+# ---
+# # PersistentVolumeClaim para logs del Backend
+# apiVersion: v1
+# kind: PersistentVolumeClaim
+# metadata:
+#   name: backend-logs-pvc
+#   namespace: notes-app
+# spec:
+#   accessModes:
+#     - ReadWriteOnce
+#   storageClassName: ebs-gp3
+#   resources:
+#     requests:
+#       storage: 5Gi
