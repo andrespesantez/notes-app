@@ -1,4 +1,4 @@
-# Imagen de desarrollo para arquitectura ARM
+# Imagen de desarrollo multi-arquitectura
 FROM maven:3.8-eclipse-temurin-21 AS build
 
 # Establecer el directorio de trabajo
@@ -16,8 +16,8 @@ COPY src ./src
 # Descargar dependencias y compilar
 RUN mvn clean package -DskipTests
 
-# Imagen de produccion para arquitectura ARM
-FROM --platform=linux/arm64 eclipse-temurin:21-jdk-alpine
+# Imagen de produccion multi-arquitectura (linux/amd64 para EKS)
+FROM eclipse-temurin:21-jdk-alpine
 
 # Establecer el directorio de trabajo
 WORKDIR /app
